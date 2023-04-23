@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Platformer Game</title>
+    <style>
+      /* CSS for game canvas and game objects */
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        background-color: #f0f0f0;
+        display: block;
+      }
+      .hero {
+        width: 30px;
+        height: 30px;
+        background-color: blue;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+      }
+      .coin {
+        width: 20px;
+        height: 20px;
+        background-color: orange;
+        position: absolute;
+      }
+      .platform {
+        background-color: green;
+        position: absolute;
+      }
+      .enemy {
+        width: 30px;
+        height: 30px;
+        background-color: red;
+        position: absolute;
+      }
+      .spike {
+        width: 20px;
+        height: 20px;
+        background-color: black;
+        position: absolute;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+      // JavaScript for game mechanics
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Game objects
+      const hero = { x: 0, y: 0, width: 30, height: 30 };
+      const coins = [
+        { x: 100, y: 550, width: 20, height: 20 },
+        { x: 300, y: 450, width: 20, height: 20 },
+      ];
+      const platforms = [
+        { x: 0, y: 570, width: 800, height: 30 },
+        { x: 200, y: 500, width: 400, height: 30 },
+      ];
+      const enemies = [{ x: 500, y: 540, width: 30, height: 30 }];
+      const spikes = [{ x: 150, y: 550, width: 20, height: 20 }];
+
+      // Game state
+      let score = 0;
+      let isJumping = false;
+      let velocityY = 0;
+
+      // Event listeners for player input
+      document.addEventListener("keydown", function (event) {
+        if (event.keyCode === 37) {
+          // Left arrow key
+          // Move the hero to the left
+          hero.x -= 5;
+        } else if (event.keyCode === 39) {
+          // Right arrow key
+          // Move the hero to the right
+          hero.x += 5;
+        } else if (event.keyCode === 38) {
+          // Spacebar for jump
+          if (!isJumping) {
+            // Make the hero jump
+            isJumping = true;
+            velocityY = -10;
+          }
+        }
+      });
+
+      // Game loop
+      function gameLoop() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Update game objects positions
+        hero.y += velocityY;
+        velocityY += 0.5;
+
+        // Check collisions
+        checkCollisions();
+
+        // Render game objects
+        drawHero();
+        drawScore();
+        drawCoins();
+        drawPlatforms();
+        drawEnemies();
+        drawSpikes();
+
+        // Request next frame
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Function to check collisions
+      function checkCollisions() {
+        // Check collision
+
+        platforms.forEach((platform) => {
+          if (isColliding(hero, platform)) {
+            // If hero is colliding with a platform, stop jumping and set hero's Y position to be on top of the platform
+            isJumping = false;
+            hero.y = platform.y - hero.height;
+            velocityY = 0;
+          }
+        });
+
+        // Check collision with coins
+        coins.forEach((coin, index) => {
+          if (isColliding(hero, coin)) {
+            // If hero is colliding with a coin, remove the coin from the coins array
+            coins.splice(index, 1);
+            score++;
+          }
+        });
+
+        // Check collision with enemies
+        enemies.forEach((enemy) => {
+          if (isColliding(hero, enemy)) {
+            // If hero is colliding with an enemy, end the game
+            drawGameOver("enemy");
+            setTimeout(() => {
+              location.reload();
+            }, 2000);
+          }
+        });
+
+        // Check collision with spikes
+        spikes.forEach((spike) => {
+          if (isColliding(hero, spike)) {
+            // If hero is colliding with a spike, end the game
+            drawGameOver("spike");
+            setTimeout(() => {
+              location.reload();
+            }, 2000);
+          }
+        });
+      }
+
+      // Function to draw hero
+      function drawHero() {
+        ctx.fillStyle = "blue";
+        ctx.fillRect(hero.x, hero.y, hero.width, hero.height);
+      }
+
+      // Function to print the score
+      function drawScore() {
+        ctx.fillStyle = "orange";
+        ctx.font = "48px sans-serif";
+        ctx.fillText("Score: " + score, 10, 50);
+      }
+
+      // Function to draw coins
+      function drawCoins() {
+        ctx.fillStyle = "orange";
+        coins.forEach((coin) => {
+          ctx.fillRect(coin.x, coin.y, coin.width, coin.height);
+        });
+      }
+
+      // Function to draw platforms
+      function drawPlatforms() {
+        ctx.fillStyle = "green";
+        platforms.forEach((platform) => {
+          ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+        });
+      }
+
+      // Function to draw enemies
+      function drawEnemies() {
+        ctx.fillStyle = "red";
+        enemies.forEach((enemy) => {
+          ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        });
+      }
+
+      // Function to draw spikes
+      function drawSpikes() {
+        ctx.fillStyle = "black";
+        spikes.forEach((spike) => {
+          ctx.fillRect(spike.x, spike.y, spike.width, spike.height);
+        });
+      }
+
+      // Function to print Game Over message
+      function drawGameOver(reason) {
+        ctx.fillStyle = "black";
+        ctx.font = "32px sans-serif";
+        if (reason === "enemy") {
+          ctx.fillText("Game over, you hit an enemy", 200, 280);
+        } else if (reason === "spike") {
+          ctx.fillText("Game over, you hit a spike", 200, 280);
+        }
+      }
+
+      // Function to check collision between two objects
+      function isColliding(obj1, obj2) {
+        return (
+          obj1.x < obj2.x + obj2.width &&
+          obj1.x + obj1.width > obj2.x &&
+          obj1.y < obj2.y + obj2.height &&
+          obj1.y + obj1.height > obj2.y
+        );
+      }
+
+      // Start the game loop
+      gameLoop();
+    </script>
+  </body>
+</html>
